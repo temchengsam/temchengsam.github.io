@@ -11,10 +11,22 @@
             border: 5px solid #ccc;
             margin: 0;
             padding: 0;
+            overflow: hidden; /* 隱藏捲軸 */
+            background-color: rgba(0, 0, 0, 0.7); /* 背景顏色更暗 */
         }
-        /* 隱藏捲軸 */
-        body {
-            overflow: hidden;
+        /* 使背景模糊 */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-image: url('bg.png'); /* 背景圖片 */
+            background-size: cover;
+            background-repeat: no-repeat;
+            filter: blur(5px); /* 模糊效果 */
         }
         /* 添加移動動畫效果 */
         #sheet-content {
@@ -23,7 +35,12 @@
         #sheet-content span {
             position: absolute;
             font-weight: bold;
-            transition: transform 0.5s;
+            animation: spinAnimation 5s linear infinite; /* 添加打转动画 */
+            color: white; /* 文字亮色 */
+        }
+        @keyframes spinAnimation {
+            0% { transform: rotate(0deg); } /* 开始时角度为0度 */
+            100% { transform: rotate(360deg); } /* 完成时角度为360度，即一圈 */
         }
         /* 放置圖片到左下角 */
         #cup-img {
@@ -49,7 +66,7 @@
         }
     </style>
 </head>
-<body style="background-color: #f0f0f0;">
+<body>
 
 <h1>Google Sheets 中的文字</h1>
 
@@ -59,10 +76,12 @@
 
 <img id="cup-img" src="cup.png" alt="cup">
 
-<button id="move-text-btn" onclick="moveTextToCup()">將所有文字放入cup</button>
+<button id="stop-rotation-btn" onclick="stopRotation()">停止旋轉</button>
 
 <script>
-var animationIntervalId;
+function getRandomNumber(min, max) {
+    return Math.random() * (max - min) + min;
+}
 
 function getRandomColor(usedColors) {
     var color;
@@ -98,12 +117,8 @@ function updateSheetContent() {
                     var randomColor = getRandomColor(usedColors);
                     usedColors.push(randomColor); // 添加新生成的顏色到已使用的顏色列表
                     var randomSize = Math.floor(Math.random() * 6) + 18; // 字體大小範圍為 18 到 24
-                    var randomX = Math.random() * (window.innerWidth - 200); // 隨機 X 軸位置
-                    randomX = Math.max(randomX, 0); // 限制在屏幕內
-                    randomX = Math.min(randomX, window.innerWidth - 200); // 限制在屏幕內
-                    var randomY = Math.random() * (window.innerHeight - 50); // 隨機 Y 軸位置
-                    randomY = Math.max(randomY, 0); // 限制在屏幕內
-                    randomY = Math.min(randomY, window.innerHeight - 50); // 限制在屏幕內
+                    var randomX = getRandomNumber(0, window.innerWidth - 200); // 隨機 X 軸位置
+                    var randomY = getRandomNumber(0, window.innerHeight - 50); // 隨機 Y 軸位置
                     rowData += '<span style="color: ' + randomColor + '; font-size: ' + randomSize + 'px; left: ' + randomX + 'px; top: ' + randomY + 'px;">' + cell.textContent + '</span> ';
                 });
 
@@ -123,47 +138,22 @@ setInterval(updateSheetContent, 5000);
 // 初始化時立即更新一次
 updateSheetContent();
 
-function moveTextToCup() {
+function stopRotation() {
     var spans = document.querySelectorAll('#sheet-content span');
     spans.forEach(span => {
-        var cupX = document.getElementById('cup-img').offsetLeft;
-        var cupY = document.getElementById('cup-img').offsetTop;
-        span.style.transform = `translate(${cupX}px, ${cupY}px)`;
+        span.style.animation = "none"; // 取消動畫
     });
 
-    var btn = document.getElementById('move-text-btn');
-    if (btn.innerHTML === '將所有文字放入cup') {
-        btn.innerHTML = '釋放文字';
+    var btn = document.getElementById('stop-rotation-btn');
+    if (btn.innerHTML === '停止旋轉') {
+        btn.innerHTML = '啟動旋轉';
     } else {
-        btn.innerHTML = '將所有文字放入cup';
+        btn.innerHTML = '停止旋轉';
+        spans.forEach(span => {
+            span.style.animation = "none"; // 停止旋轉
+        });
     }
 }
-
-// 碰到邊框就反彈
-document.addEventListener('DOMContentLoaded', function() {
-    var spans = document.querySelectorAll('#sheet-content span');
-    var maxX = window.innerWidth - 200;
-    var maxY = window.innerHeight - 50;
-    spans.forEach(span => {
-        var moveX = Math.random() > 0.5 ? 1 : -1; // 隨機選擇移動方向
-        var moveY = Math.random() > 0.5 ? 1 : -1; // 隨機選擇移動方向
-        var speedX = Math.random() * 2 + 1; // 隨機速度
-        var speedY = Math.random() * 2 + 1; // 隨機速度
-        setInterval(function() {
-            var rect = span.getBoundingClientRect();
-            var x = rect.left + moveX * speedX;
-            var y = rect.top + moveY * speedY;
-            if (x < 0 || x > maxX) {
-                moveX *= -1;
-            }
-            if (y < 0 || y > maxY) {
-                moveY *= -1;
-            }
-            span.style.left = x + 'px';
-            span.style.top = y + 'px';
-        }, 50);
-    });
-});
 </script>
 
 </body>
